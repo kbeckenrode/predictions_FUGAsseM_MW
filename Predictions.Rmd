@@ -8,4 +8,19 @@ date: "2022-07-25"
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Step 1:
+## Step 1: Import FUGAsseM prediction files and list of taxa into R project. Completed.
+## Step 2: Write functions to create a data.frame using readr function
+:
+```{r}
+library(readr)
+HMP2_fugassem_GO_func_assignment_tsv <- read_delim("HMP2_fugassem_GO.func_assignment.tsv.gz", 
+    delim = "\t", escape_double = FALSE, 
+    trim_ws = TRUE)
+View(HMP2_fugassem_GO_func_assignment_tsv)
+
+library(readr)
+HMP2_fugassem_string_taxa <- read_table("HMP2_fugassem_string_taxa.txt")
+View(HMP2_fugassem_string_taxa)
+
+```
+
