@@ -23,4 +23,21 @@ HMP2_fugassem_string_taxa <- read_table("HMP2_fugassem_string_taxa.txt")
 View(HMP2_fugassem_string_taxa)
 
 ```
+##Step 3
+Load MetaWIEBLE spreadsheets as a data.frame
 
+
+```{r}
+library(readxl)
+HMP2_prioritized_list_Pfam <- read_excel("HMP2_prioritized_list.Pfam.xlsx")
+View(HMP2_prioritized_list_Pfam)
+
+library(readr)
+HMP2_proteinfamilies_prority_report_all <- read_table("HMP2_proteinfamilies.prority_report.all.tsv")
+View(HMP2_proteinfamilies_prority_report_all)
+
+```
+
+## Step 4: Intersect top 10% MetaWIBELE priorities with FUGAsseM predictions
+
+## Step 5: Intersect with tractable bug list from FUGAsseM
