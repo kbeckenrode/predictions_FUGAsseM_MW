@@ -141,8 +141,6 @@ both_FUGAsseM_go_b<-(data.frame(intersect(bb2$fixed, GO_272$child_go_id)))
 both_FUGAsseM_go_f<-(data.frame(intersect(bf$fixed, GO_272$child_go_id)))
 both_FUGAsseM_go_p<-(data.frame(intersect(bp$fixed, GO_272$child_go_id)))
 
-FUGAsseM_go_b_intersect<-(data.frame(intersect(bb2$feature, only_bacteroidetes_filtered$familyID)))
-
 #Filter FUGAsseM by 10%
 both_FUGAsseM_go_b_filtered <- bb2 %>% filter(`score` >0.90)
 
