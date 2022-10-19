@@ -146,6 +146,9 @@ FUGAsseM_go_b_intersect<-(data.frame(intersect(bb2$feature, only_bacteroidetes_f
 #Filter FUGAsseM by 10%
 both_FUGAsseM_go_b_filtered <- bb2 %>% filter(`score` >0.90)
 
+#Intersect clusters from MW and FG
+bothMW_FG_cluster<-(data.frame(intersect(only_bacteroidetes_filtered$familyID,bb2$feature)))
+
 ##Intersect MetaWIBELE with FUGAsseM using UniRef90 column name (from training with Xochitl)
 ## both<-intersect(HMP2_prioritized_list_Pfam$`UniRef90 ID`,HMP2_fugassem_GO_func_assignment_tsv$UniRef90)
 
