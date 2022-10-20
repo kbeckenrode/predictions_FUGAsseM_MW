@@ -102,7 +102,7 @@ bb$fixed<-new_b4
 
 ```{r}
 bb2 <- log %>% filter(str_detect(taxa_lineage, "p__Bacteroidetes"))
-new_b<-data.frame(str_split_fixed(bb$func,"\\[",2 ))
+new_b<-data.frame(str_split_fixed(bb2$func,"\\[",2 ))
 new_b3<-gsub(":","", new_b$X1)
 new_b4<-gsub("GO","GO:", new_b3)
 bb2$fixed<-new_b4
