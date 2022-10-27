@@ -1,68 +1,13 @@
----
-title: "Predictions"
-output: html_document
-date: "2022-07-25"
----
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-## Step 1: Import FUGAsseM prediction files and list of taxa into R project. Completed.
-## Step 2: Write functions to create a data.frame using readr function
-:
-```{r}
-library(readr)
-HMP2_fugassem_GO_func_assignment_tsv <- read_delim("HMP2_fugassem_GO.func_assignment.tsv.gz", 
-    delim = "\t", escape_double = FALSE, 
-    trim_ws = TRUE)
-View(HMP2_fugassem_GO_func_assignment_tsv)
-
-library(readr)
-HMP2_fugassem_string_taxa <- read_table("HMP2_fugassem_string_taxa.txt")
-View(HMP2_fugassem_string_taxa)
-
-```
-##Step 3
-Load MetaWIEBLE spreadsheets as a data.frame
-
-
-```{r}
-library(readxl)
-HMP2_prioritized_list_Pfam <- read_excel("HMP2_prioritized_list.Pfam.xlsx")
-View(HMP2_prioritized_list_Pfam)
-
-library(readr)
-HMP2_proteinfamilies_prority_report_all <- read_table("HMP2_proteinfamilies.prority_report.all.tsv")
-View(HMP2_proteinfamilies_prority_report_all)
-
-title: "Predictions"
-output:
-  html_document: default
-  pdf_document: default
-date: "2022-10-19"
----
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-##Look for other enzymes like this (i.e. mucus utilization) in Bacteroides/Parabacteroides
-##Snip off top MetaWIBELE prioritizations in Bacteroides (etc.)
-##Look for overlap of these with FUGAsseM predictions in glycan utilization terms
-##Probably starting with GO:0006486 or GO:0009100, or wherever that overlaps with the FUGAsseM prediction “slice” set
 
 ## Step 1: Import FUGAsseM prediction file, METAWIBELE file, and list of FUGAsseM taxa into R project.
+
 ```{r}
 library(readr)
 HMP2_fugassem_GO_func_assignment_tsv <- read_delim("HMP2_fugassem_GO.func_assignment.tsv.gz", 
-    delim = "\t", escape_double = FALSE, 
+   delim = "\t", escape_double = FALSE, 
     trim_ws = TRUE)
-##View(HMP2_fugassem_GO_func_assignment_tsv)
-
-library(readr)
-HMP2_fugassem_string_taxa <- read_table("HMP2_fugassem_string_taxa.txt")
-##View(HMP2_fugassem_string_taxa)
+View(HMP2_fugassem_GO_func_assignment_tsv)
 
 ##load MetaWIBELE files
 library(readr)
@@ -76,12 +21,6 @@ only_proteobacteria <- read_delim("only_proteobacteria.tsv",
     delim = "\t", escape_double = FALSE, 
     trim_ws = TRUE)
 View(only_proteobacteria)
-
-library(readr)
-only_firmicutes <- read_delim("only_firmicutes.tsv", 
-    delim = "\t", escape_double = FALSE, 
-    trim_ws = TRUE)
-View(only_firmicutes)
 
 ##load FUGAsseM
 library(readr)
@@ -98,19 +37,16 @@ View(log)
 
 ```
 
-
-```{r}
 ## Step 2: Load libraries
+```{r}
 
 library(dplyr)
 library(stringr)
 
-## adding  %>% filter(`Priority score` >0.5)  will pipe more filters as a TRUE/FALSE statement
-
 ```
 
-```{r}
 ##Step 3: (only need to do once to make file) Get GO terms at and beneath parent terms 'GO:0000242". 'GO:0006486' or 'GO:0009100'
+```{r}
 
 library(GOfuncR)
 ##GO_biofilm<-get_child_nodes(c('GO:0042710'))
@@ -118,15 +54,16 @@ GO_272<-get_child_nodes(c('GO:0000272'))
 
 
 ```
+
+##Step 4: filter MetaWIBELE by top 10%
+
 ```{r}
-##Step4: filter MetaWIBELE by top 10%
 
 only_bacteroidetes_filtered <- only_bacteroidetes %>% filter(`Priority score` >0.9)
 only_proteobacteria_filtered <- only_proteobacteria %>% filter(`Priority score` >0.9)
-only_firmicutes_filtered <- only_firmicutes %>% filter(`Priority score` >0.9)
 ```
 
-## Step 5: Find Bacteroides and filter in FUGAsseM file. Also, re-arrange syntax of func column by adding a new fixed column. There was extra information attached to the GO term, so it could not intersect as is.
+## Step 5: Find Bacteroides and filter for taxa in FUGAsseM file. Also, re-arrange syntax of func column by adding a new fixed column. There was extra information attached to the GO term, because it could not intersect as is.
 
 ```{r}
 
@@ -140,7 +77,7 @@ bb$fixed<-new_b4
 
 ```{r}
 bb2 <- log %>% filter(str_detect(taxa_lineage, "p__Bacteroidetes"))
-new_b<-data.frame(str_split_fixed(bb$func,"\\[",2 ))
+new_b<-data.frame(str_split_fixed(bb2$func,"\\[",2 ))
 new_b3<-gsub(":","", new_b$X1)
 new_b4<-gsub("GO","GO:", new_b3)
 bb2$fixed<-new_b4
@@ -155,42 +92,27 @@ bp$fixed<-new_b4
 
 ```
 
-```{r}
-bf <- log %>% filter(str_detect(taxa_lineage, "p__Firmicutes"))
-new_b<-data.frame(str_split_fixed(bf$func,"\\[",2 ))
-new_b3<-gsub(":","", new_b$X1)
-new_b4<-gsub("GO","GO:", new_b3)
-bf$fixed<-new_b4
-
-```
 ## Step 6: Intersect Bacteroides filtered MetaWIBELE priorities and FUGAsseM predictions with GO terms
 
 ```{r}
 ##Intersect MetaWIBELE with GO list
 both_MW_go_b <-(data.frame(intersect(only_bacteroidetes_filtered$`GO(BP)`, GO_272$child_go_id)))
 both_MW_go_p <-(data.frame(intersect(only_proteobacteria_filtered$`GO(BP)`, GO_272$child_go_id)))
-both_MW_go_f <-(data.frame(intersect(only_firmicutes_filtered$`GO(BP)`, GO_272$child_go_id)))
-
 
 ##Intersect FUGAsseM for GO terms
 ##both_FUGAsseM_go<-(data.frame(intersect(b$fixed, GO_expanded$child_go_id)))
 
 both_FUGAsseM_go_b<-(data.frame(intersect(bb2$fixed, GO_272$child_go_id)))
-both_FUGAsseM_go_f<-(data.frame(intersect(bf$fixed, GO_272$child_go_id)))
 both_FUGAsseM_go_p<-(data.frame(intersect(bp$fixed, GO_272$child_go_id)))
+
+## Step 7: Filter FG for top 10%
 
 #Filter FUGAsseM by 10%
 both_FUGAsseM_go_b_filtered <- bb2 %>% filter(`score` >0.90)
 
-#Intersect clusters from MW and FG
-bothMW_FG_cluster<-(data.frame(intersect(only_bacteroidetes_filtered$familyID,bb2$feature)))
+## Step 8: Step Combine MW and FG for any overlap
 
-##Intersect MetaWIBELE with FUGAsseM using UniRef90 column name (from training with Xochitl)
-## both<-intersect(HMP2_prioritized_list_Pfam$`UniRef90 ID`,HMP2_fugassem_GO_func_assignment_tsv$UniRef90)
-
-write_csv(both_FUGAsseM_go, "FUGAsseM_GO")
-write.csv(both_go_BP, "test_BP.csv")
+#Innerjoin clusterID from MW and FG and get 399
+bothMW_FG_inner_join<-(inner_join(only_bacteroidetes_filtered,bb2,by=c("familyID"="feature")))
 
 ```
-
-
