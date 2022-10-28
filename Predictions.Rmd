@@ -1,118 +1,82 @@
 
 
-## Step 1: Import FUGAsseM prediction file, METAWIBELE file, and list of FUGAsseM taxa into R project.
+---
+title: "independent"
+output: html_document
+date: '2022-10-20'
+---
 
-```{r}
-library(readr)
-HMP2_fugassem_GO_func_assignment_tsv <- read_delim("HMP2_fugassem_GO.func_assignment.tsv.gz", 
-   delim = "\t", escape_double = FALSE, 
-    trim_ws = TRUE)
-View(HMP2_fugassem_GO_func_assignment_tsv)
-
-##load MetaWIBELE files
-library(readr)
-only_bacteroidetes <- read_delim("only_bacteroidetes.tsv", 
-    delim = "\t", escape_double = FALSE, 
-    trim_ws = TRUE)
-View(only_bacteroidetes)
-
-library(readr)
-only_proteobacteria <- read_delim("only_proteobacteria.tsv", 
-    delim = "\t", escape_double = FALSE, 
-    trim_ws = TRUE)
-View(only_proteobacteria)
-
-##load FUGAsseM
-library(readr)
-HMP2_fugassem_GO_func_assignment <- read_delim("HMP2_fugassem_GO.func_assignment.tsv", 
-    delim = "\t", escape_double = FALSE, 
-    trim_ws = TRUE)
-View(HMP2_fugassem_GO_func_assignment)
-
-#Load FUGAsseM filtered for GO:0000242
-library(readr)
-log <- read_delim("log.tsv", delim = "\t", 
-    escape_double = FALSE, trim_ws = TRUE)
-View(log)
-
-```
-
-## Step 2: Load libraries
-```{r}
-
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE) 
+library(tidyverse)
 library(dplyr)
 library(stringr)
-
-```
-
-##Step 3: (only need to do once to make file) Get GO terms at and beneath parent terms 'GO:0000242". 'GO:0006486' or 'GO:0009100'
-```{r}
-
 library(GOfuncR)
-##GO_biofilm<-get_child_nodes(c('GO:0042710'))
+```
+
+Get GO children
+```{r}
 GO_272<-get_child_nodes(c('GO:0000272'))
+```
 
+Load MW and Fugassem data, and filter
+```{r}
+# load FUG
+HMP2_fugassem_GO_func_assignment_tsv <- read_delim("HMP2_fugassem_GO.func_assignment.tsv.gz", 
+    delim = "\t", escape_double = FALSE, 
+    trim_ws = TRUE)
+
+# make pattern matching much easier. This is a terrible thing to do if GO IDs are not all 10 digits long but otherwise makes code much simpler
+HMP2_fugassem_GO_func_assignment_tsv$GO<-substr(HMP2_fugassem_GO_func_assignment_tsv$func, 1, 10)
+
+# raw file: 1,263,290 rows
+length(rownames(HMP2_fugassem_GO_func_assignment_tsv))
+
+# filter FUG
+HMP2_fugassem_GO_func_assignment_tsv <-HMP2_fugassem_GO_func_assignment_tsv %>% filter(score > 0.9) %>% filter(GO %in% GO_272$child_go_id) %>% filter(str_detect(taxa_lineage, "p__Bacteroidetes|p__Proteobacteria"))
+
+#173 candidates
+length(rownames(HMP2_fugassem_GO_func_assignment_tsv))
+
+# load MW
+only_bacteroidetes <- read.csv("only_bacteroidetes.csv")
+only_proteobacteria <- read.csv("only_proteobacteria.csv")
+##load MetaWIBELE files
+
+# No good reason not to combine these and then do filtering
+MW<-rbind(only_bacteroidetes, only_proteobacteria)
+MW <- MW %>% filter(Priority.score > 0.9)
+
+# There are 26,643 rows from Bact/Prot in MW data w/ priority > 0.9
+length(rownames(MW))
+
+# three candidates depleted in dysbiotic IBD. 
+mw_cand<- MW %>% filter(GO.BP. %in% GO_272$child_go_id | GO.CC. %in% GO_272$child_go_id | GO.MF. %in% GO_272$child_go_id)
+
+
+# double check - is GO.BP the only matching column? Yes.
+double_check<- MW %>% filter(GO.BP. %in% GO_272$child_go_id)
+
+bothMW_FG_inner_join<-(inner_join(mw_cand,HMP2_fugassem_GO_func_assignment_tsv,by=c("familyID"="feature")))
 
 ```
 
-##Step 4: filter MetaWIBELE by top 10%
+```{r protein_families_common_in_FUG_and_MW}
+## 173 candidates from FUG that > 0.9 + taxonomy + correct GO category
+## 26643 candidates from MW with same taxonomy + priority > 0.9
+## FUG "feature" and MW "familyID" -> intersect
 
-```{r}
-
-only_bacteroidetes_filtered <- only_bacteroidetes %>% filter(`Priority score` >0.9)
-only_proteobacteria_filtered <- only_proteobacteria %>% filter(`Priority score` >0.9)
-```
-
-## Step 5: Find Bacteroides and filter for taxa in FUGAsseM file. Also, re-arrange syntax of func column by adding a new fixed column. There was extra information attached to the GO term, because it could not intersect as is.
-
-```{r}
-
-bb <- HMP2_fugassem_GO_func_assignment_tsv %>% filter(str_detect(taxa_lineage, "p__Bacteroidetes"))
-new_b<-data.frame(str_split_fixed(bb$func,"\\[",2 ))
-new_b3<-gsub(":","", new_b$X1)
-new_b4<-gsub("GO","GO:", new_b3)
-bb$fixed<-new_b4
-
+common_families <- intersect(MW$familyID, HMP2_fugassem_GO_func_assignment_tsv$feature)
+newly_annotated <- HMP2_fugassem_GO_func_assignment_tsv[which(HMP2_fugassem_GO_func_assignment_tsv$feature %in% common_families & HMP2_fugassem_GO_func_assignment_tsv$new_ann == 1),]
+all_families <- HMP2_fugassem_GO_func_assignment_tsv[which(HMP2_fugassem_GO_func_assignment_tsv$feature %in% common_families),]
+rownames(MW) <- MW$familyID
+all_families <- as.data.frame(all_families)
+rownames(all_families) <- all_families$feature
+all_fams_in_MW <- MW[rownames(all_families),]
+all_families_all_info <- cbind(all_families, all_fams_in_MW)
 ```
 
 ```{r}
-bb2 <- log %>% filter(str_detect(taxa_lineage, "p__Bacteroidetes"))
-new_b<-data.frame(str_split_fixed(bb2$func,"\\[",2 ))
-new_b3<-gsub(":","", new_b$X1)
-new_b4<-gsub("GO","GO:", new_b3)
-bb2$fixed<-new_b4
-```
-
-```{r}
-bp <- log %>% filter(str_detect(taxa_lineage, "p__Proteobacteria"))
-new_b<-data.frame(str_split_fixed(bp$func,"\\[",2 ))
-new_b3<-gsub(":","", new_b$X1)
-new_b4<-gsub("GO","GO:", new_b3)
-bp$fixed<-new_b4
-
-```
-
-## Step 6: Intersect Bacteroides filtered MetaWIBELE priorities and FUGAsseM predictions with GO terms
-
-```{r}
-##Intersect MetaWIBELE with GO list
-both_MW_go_b <-(data.frame(intersect(only_bacteroidetes_filtered$`GO(BP)`, GO_272$child_go_id)))
-both_MW_go_p <-(data.frame(intersect(only_proteobacteria_filtered$`GO(BP)`, GO_272$child_go_id)))
-
-##Intersect FUGAsseM for GO terms
-##both_FUGAsseM_go<-(data.frame(intersect(b$fixed, GO_expanded$child_go_id)))
-
-both_FUGAsseM_go_b<-(data.frame(intersect(bb2$fixed, GO_272$child_go_id)))
-both_FUGAsseM_go_p<-(data.frame(intersect(bp$fixed, GO_272$child_go_id)))
-
-## Step 7: Filter FG for top 10%
-
-#Filter FUGAsseM by 10%
-both_FUGAsseM_go_b_filtered <- bb2 %>% filter(`score` >0.90)
-
-## Step 8: Step Combine MW and FG for any overlap
-
-#Innerjoin clusterID from MW and FG and get 399
-bothMW_FG_inner_join<-(inner_join(only_bacteroidetes_filtered,bb2,by=c("familyID"="feature")))
-
+write.csv(all_families_all_info, "all_families_all_info.csv")
+write.csv(newly_annotated, "newly_annotated.csv")
 ```
