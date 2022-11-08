@@ -57,8 +57,6 @@ mw_cand<- MW %>% filter(GO.BP. %in% GO_272$child_go_id | GO.CC. %in% GO_272$chil
 # double check - is GO.BP the only matching column? Yes.
 double_check<- MW %>% filter(GO.BP. %in% GO_272$child_go_id)
 
-bothMW_FG_inner_join<-(inner_join(mw_cand,HMP2_fugassem_GO_func_assignment_tsv,by=c("familyID"="feature")))
-
 ```
 
 ```{r protein_families_common_in_FUG_and_MW}
