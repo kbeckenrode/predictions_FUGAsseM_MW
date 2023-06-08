@@ -1,0 +1,54 @@
+---
+title: "MW"
+author: "Kelly Eckenrode"
+date: "2023-01-19"
+output: html_document
+---
+
+##How to subset a dataframe and make into a new object
+```{r}
+MW_relax=(MW_filtered[MW_filtered$`UniRef90 description`== "Relaxase",])
+View(MW_relax)
+```
+
+```{r}
+MW_rc=(MW_filtered[MW_filtered$`GO(BP)`== "GO:0000105",])
+View(MW_rc)
+
+MW_filtered %>% filter(`GO(BP)` %in% c("GO:0000105"))
+```
+
+```{r}
+MW_47=(MW_filtered[str_detect(MW_filtered$`GO(BP)`, "GO:0000747"), ])
+
+####
+##MW105f<-MW_105 %>filter(!(is.na(`GO BP`)) 
+
+```
+
+```{r}
+ggplot(MW_filtered, aes(x=`Transmembrane protein`, y=Prevalence, color = `Signal peptide`) ) + geom_violin()
+
+``` 
+```{r}
+ggplot(MW_filtered, aes(x=`Priority score`, y=Abundance) ) + geom_density_2d(
+)
+
+``` 
+```{r}
+library(dplyr)                
+filter_FG_pilus <- HMP2_fugassem_GO_func_assignment_tsv %>% filter(`GO` == "GO:0009297", `new_ann` == "1")
+
+filter_MW_pilus <- HMP2_proteinfamlies_metawibele_rank_all_report_tsv %>% filter(`GO(BP)` == "GO:0009297")
+
+MW_filter90 <-HMP2_proteinfamlies_metawibele_rank_all_report_tsv %>% filter(`Priority score` > 0.9)
+
+FG_filter85 <-HMP2_fugassem_GO_func_assignment_tsv %>% filter(`score` > 0.85)
+
+
+common_families<-MW_filter90 %>% filter(`GO(BP)` %in% FG_filter85$GO)
+
+common_families_filters<-common_families %>% filter(`UniRef90 characterization` == "UniRef90_uncharacterized")
+;p['```
+
+
